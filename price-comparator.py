@@ -4,6 +4,9 @@ from bs4 import BeautifulSoup
 
 def main(get_functions):
     ean = input("EAN: ")
+    if not is_ean_valid(ean):
+        print("Invalid EAN")
+        return
     print("Checking prices in stores")
     data = list()
     for f in get_functions:
@@ -13,6 +16,14 @@ def main(get_functions):
             print('{}\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n'.format(*store))
     if len(data) == 0:
         print("Not found in any store")
+
+
+def is_ean_valid(ean):
+    if not ean.isnumeric():
+        return False
+    if 12 <= len(ean) <= 13:
+        return True
+    return False
 
 
 # List of functions to get data from stores
