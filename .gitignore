@@ -6,6 +6,9 @@ __pycache__/
 # PyCharm IDE files
 .idea/
 
+# Outputs folder
+output/
+
 # C extensions
 *.so
 

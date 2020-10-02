@@ -1,5 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
+import os
 
 
 def main(get_functions):
@@ -7,23 +9,62 @@ def main(get_functions):
     if not is_ean_valid(ean):
         print("Invalid EAN")
         return
-    print("Checking prices in stores")
+    print("Checking prices in stores...")
     data = list()
-    for f in get_functions:
-        store = f(ean)
+    for i in range(len(get_functions)):
+        print("Checking ({}/{})".format(i + 1, len(get_functions)))
+        store = get_functions[i](ean)
         if store is not None:
             data.append(store)
-            print('{}\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n'.format(*store))
     if len(data) == 0:
         print("Not found in any store")
+    else:
+        print("Found {} result{}!".format(len(data), "s" if len(data) > 1 else ""))
+        show_results(data)
+        save_txt(ean, data)
+        save_csv(ean, data)
 
 
+# Validates EAN
 def is_ean_valid(ean):
     if not ean.isnumeric():
         return False
     if 12 <= len(ean) <= 13:
         return True
     return False
+
+
+# Show results in console, if asked
+def show_results(data):
+    show = input("Show results in console? [y/n] ")
+    if show.lower() == 'y':
+        for store in data:
+            print('{}\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n'.format(*store))
+
+
+# Save results in a TXT file, if asked
+def save_txt(ean, data):
+    save = input("Save results in TXT file? [y/n] ")
+    if save.lower() == 'y':
+        date = datetime.today().strftime('%Y-%m-%d')
+        filename = "output/{}_{}.txt".format(ean, date)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, "w") as file:
+            for store in data:
+                file.write('{}\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n\n'.format(*store))
+
+
+# Save results in a CSV file, if asked
+def save_csv(ean, data):
+    save = input("Save results in CSV file? [y/n] ")
+    if save.lower() == 'y':
+        date = datetime.today().strftime('%Y-%m-%d')
+        filename = "output/{}_{}.csv".format(ean, date)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        with open(filename, "w") as file:
+            file.write('store,name,price,stock,link\n')
+            for store in data:
+                file.write('{},{},{},{},{}\n'.format(*store))
 
 
 # List of functions to get data from stores
