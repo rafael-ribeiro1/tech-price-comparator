@@ -39,7 +39,7 @@ def show_results(data):
     show = input("Show results in console? [y/n] ")
     if show.lower() == 'y':
         for store in data:
-            print('{}\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n'.format(*store))
+            print('\033[1m{}\033[0m\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n'.format(*store))
 
 
 # Save results in a TXT file, if asked
@@ -72,7 +72,7 @@ get_functions = list()
 
 
 # Get product info from GlobalData
-# www.globaldata.pt
+# https://www.globaldata.pt
 def get_globaldata(ean):
     try:
         url = "https://www.globaldata.pt/catalogsearch/result/?q=" + ean
@@ -84,9 +84,10 @@ def get_globaldata(ean):
         link = result[0].find("a")['href']
         prodpage = requests.get(link)
         soup = BeautifulSoup(prodpage.content, 'html.parser')
-        prodean = soup.find(class_="ean").find(class_="value")
+        prodean = soup.find(class_="ean")
         if prodean is None:
             return None
+        prodean = prodean.find(class_="value")
         if int(prodean.text.strip()) != int(ean):
             return None
         result = soup.find(class_="product-info-main")
@@ -101,7 +102,7 @@ get_functions.append(get_globaldata)
 
 
 # Get product info from SwitchTechnology
-# www.switchtechnology.pt
+# https://www.switchtechnology.pt
 def get_switchtech(ean):
     try:
         url = "https://www.switchtechnology.pt/index.php?route=product/search&search=" + ean
@@ -114,9 +115,10 @@ def get_switchtech(ean):
         link = result[0].find(class_="name").find("a")['href']
         prodpage = requests.get(link, headers=headers)
         soup = BeautifulSoup(prodpage.content, 'html.parser')
-        prodean = soup.find(class_="product-ean").find("span")
+        prodean = soup.find(class_="product-ean")
         if prodean is None:
             return None
+        prodean = prodean.find("span")
         if int(prodean.text.strip()) != int(ean):
             return None
         result = soup.find(class_="product-details")
@@ -129,6 +131,47 @@ def get_switchtech(ean):
         return None
 get_functions.append(get_switchtech)
 
+
+# Get product info from Prinfor
+# https://www.prinfor.pt
+def get_prinfor(ean):
+    try:
+        url = ("https://www.prinfor.pt/pesquisar?controller=search&orderby=position&orderway=desc&search_query=" + ean
+               + "&submit_search=")
+        page = requests.get(url)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        result = soup.find(class_="product_list")
+        if result is None:
+            return None
+        result = result.find_all(class_="product-container")
+        if len(result) == 0:
+            return None
+        link = result[0].find(class_="product_img_link")['href']
+        prodpage = requests.get(link)
+        soup = BeautifulSoup(prodpage.content, 'html.parser')
+        prodean = soup.find(id="product_ean13")
+        if prodean is None:
+            return None
+        prodean = prodean.find("span")
+        if int(prodean.text.strip()) != int(ean):
+            return None
+        name = soup.find(class_="product-title").find("h1").text
+        price = soup.find(id="our_price_display").text.strip()
+        stock = "No information"
+        stockimg = soup.find(class_="rsisto")['src']
+        if stockimg == "/modules/rsistock/img/8stock3.png":
+            stock = "Em Stock"
+        elif stockimg == "/modules/rsistock/img/8stock2.png":
+            stock = "Limitado"
+        elif stockimg == "/modules/rsistock/img/8stock1.png":
+            stock = "Brevemente"
+        elif stockimg == "/modules/rsistock/img/stock4.png":
+            stock = "Em Stock"
+        return "Prinfor", name, price, stock, link
+    except (requests.exceptions.Timeout, requests.exceptions.TooManyRedirects,
+            requests.exceptions.RequestException, AttributeError):
+        return None
+get_functions.append(get_prinfor)
 
 if __name__ == '__main__':
     main(get_functions)

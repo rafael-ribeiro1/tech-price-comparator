@@ -9,6 +9,7 @@
 ### Lojas compatíveis / Compatible stores
 * [Globaldata](https://www.globaldata.pt)
 * [Switch Technology](https://www.switchtechnology.pt)
+* [Prinfor](https://www.prinfor.pt)
 
 ###### Dados obtidos / Obtained data
 * Nome do produto / Product name
