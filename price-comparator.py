@@ -2,6 +2,9 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import os
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException, NoSuchAttributeException
+from time import sleep
 
 
 def main(get_functions):
@@ -10,12 +13,18 @@ def main(get_functions):
         print("Invalid EAN")
         return
     print("Checking prices in stores...")
+    print("*** DON'T CLOSE THE BROWSER WINDOW that is going to be automatically opened ***")
+    print("*** If the browser window doesn't close automatically after the script ends, close it ***")
     data = list()
+    DRIVER_PATH = 'C:/Users/Rafael/Desktop/Programming/msedgedriver.exe'  # Change to your web driver path
+    driver = webdriver.Edge(executable_path=DRIVER_PATH)  # Change to the function related to your browser
+    driver.implicitly_wait(5)  # OPTIONAL CHANGE: if your internet connection is too slow, set an higher value
     for i in range(len(get_functions)):
         print("Checking ({}/{})".format(i + 1, len(get_functions)))
-        store = get_functions[i](ean)
+        store = get_functions[i](ean, driver)
         if store is not None:
             data.append(store)
+    driver.quit()
     if len(data) == 0:
         print("Not found in any store")
     else:
@@ -52,6 +61,7 @@ def save_txt(ean, data):
         with open(filename, "w") as file:
             for store in data:
                 file.write('{}\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n\n'.format(*store))
+        print("Saved TXT file. Check output folder.")
 
 
 # Save results in a CSV file, if asked
@@ -65,6 +75,7 @@ def save_csv(ean, data):
             file.write('store,name,price,stock,link\n')
             for store in data:
                 file.write('{},{},{},{},{}\n'.format(*store))
+        print("Saved CSV file. Check output folder.")
 
 
 # List of functions to get data from stores
@@ -73,7 +84,7 @@ get_functions = list()
 
 # Get product info from GlobalData
 # https://www.globaldata.pt
-def get_globaldata(ean):
+def get_globaldata(ean, _):  # Not using selenium
     try:
         url = "https://www.globaldata.pt/catalogsearch/result/?q=" + ean
         page = requests.get(url)
@@ -103,7 +114,7 @@ get_functions.append(get_globaldata)
 
 # Get product info from SwitchTechnology
 # https://www.switchtechnology.pt
-def get_switchtech(ean):
+def get_switchtech(ean, _):  # Not using selenium
     try:
         url = "https://www.switchtechnology.pt/index.php?route=product/search&search=" + ean
         headers = {'User-Agent': '...'}
@@ -123,7 +134,7 @@ def get_switchtech(ean):
             return None
         result = soup.find(class_="product-details")
         name = result.find(class_="title").text
-        price = result.find(class_="price-group").find("div").text
+        price = result.find(class_="price-group").find("div").text.replace(".", ",")
         stock = result.find(class_="product-stock").find("span").text
         return "Switch Technology", name, price, stock, link
     except (requests.exceptions.Timeout, requests.exceptions.TooManyRedirects,
@@ -134,7 +145,7 @@ get_functions.append(get_switchtech)
 
 # Get product info from Prinfor
 # https://www.prinfor.pt
-def get_prinfor(ean):
+def get_prinfor(ean, _):  # Not using selenium
     try:
         url = ("https://www.prinfor.pt/pesquisar?controller=search&orderby=position&orderway=desc&search_query=" + ean
                + "&submit_search=")
@@ -172,6 +183,42 @@ def get_prinfor(ean):
             requests.exceptions.RequestException, AttributeError):
         return None
 get_functions.append(get_prinfor)
+
+
+# Get product info from Worten
+# https://www.worten.pt
+def get_worten(ean, driver):
+    try:
+        url = "https://www.worten.pt/search?query=" + ean
+        driver.get(url)
+        link = driver.find_element_by_class_name("w-product__url").get_attribute('href')
+        driver.get(link)
+        if driver.find_elements_by_class_name("w-cookies-popup__footer"):
+            driver.find_element_by_class_name("w-cookies-popup__footer") \
+                .find_element_by_class_name("w-button-primary").click()
+        sleep(0.5)
+        details = driver.find_elements_by_class_name("details-value")
+        existean = False
+        for value in details:
+            if value.text.strip() == ean:
+                existean = True
+        if not existean:
+            return None
+        name = driver.find_element_by_class_name("w-product__name").text
+        price = driver.find_element_by_class_name("w-product__price__current").get_attribute("content") + "€"
+        stockdiv = driver.find_elements_by_class_name("w-product__actions")[1].find_element_by_tag_name("div") \
+            .get_attribute('class')
+        stock = ""
+        if stockdiv == "w-product__actions-info__available":
+            stock = "Disponível"
+        elif stockdiv == "w-product__actions-info__unavailable":
+            stock = "Indisponível"
+        else:
+            return None
+        return "Worten", name, price, stock, link
+    except (NoSuchElementException, NoSuchAttributeException):
+        return None
+get_functions.append(get_worten)
 
 if __name__ == '__main__':
     main(get_functions)
