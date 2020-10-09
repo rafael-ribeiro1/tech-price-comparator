@@ -220,5 +220,35 @@ def get_worten(ean, driver):
         return None
 get_functions.append(get_worten)
 
+
+# Get product info from PCDiga
+# https://www.pcdiga.com
+def get_pcdiga(ean, driver):
+    try:
+        url = "https://www.pcdiga.com/?query=" + ean
+        driver.get(url)
+        link = driver.find_element_by_id("hits").find_element_by_class_name("product-card--title")\
+            .find_element_by_tag_name("a").get_attribute('href').strip()
+        driver.get(link)
+        prodean = driver.find_element_by_class_name("product-detail--ean").find_element_by_tag_name("p").text \
+            .strip().split(" ")[1]
+        if prodean != ean:
+            return None
+        name = driver.find_element_by_class_name("page-title").find_element_by_class_name("base").text
+        price = driver.find_element_by_class_name("value--current-price").find_element_by_class_name("price").text
+        stockdiv = driver.find_element_by_class_name("store-stock-location").get_attribute("class")
+        stock = "No information"
+        if stockdiv == "store-stock-location stock-available":
+            stock = "Em Stock"
+        elif stockdiv == "store-stock-location stock-unavailable":
+            stock = "Indisponível"
+        elif stockdiv == "store-stock-location stock-preorder":
+            stock = "Brevemente"
+        return "PCDiga", name, price, stock, link
+    except (NoSuchElementException, NoSuchAttributeException):
+        return None
+get_functions.append(get_pcdiga)
+
+
 if __name__ == '__main__':
     main(get_functions)

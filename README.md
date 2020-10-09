@@ -34,6 +34,7 @@ driver.implicitly_wait(5)  # OPTIONAL CHANGE: if your internet connection is too
 * [Switch Technology](https://www.switchtechnology.pt)
 * [Prinfor](https://www.prinfor.pt)
 * [Worten](https://www.worten.pt)
+* [PCDiga](https://www.pcdiga.com)
 
 ###### Dados obtidos / Obtained data
 * Nome do produto / Product name
