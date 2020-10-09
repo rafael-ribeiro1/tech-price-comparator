@@ -5,10 +5,16 @@ import os
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, NoSuchAttributeException
 from time import sleep
+import sys
 
 
-def main(get_functions):
-    ean = input("EAN: ")
+def main(argv, get_functions):
+    is_interactive = True
+    if len(argv) > 1:
+        ean = argv[1]
+        is_interactive = False
+    else:
+        ean = input("EAN: ")
     if not is_ean_valid(ean):
         print("Invalid EAN")
         return
@@ -18,7 +24,7 @@ def main(get_functions):
     data = list()
     DRIVER_PATH = 'C:/Users/Rafael/Desktop/Programming/msedgedriver.exe'  # Change to your web driver path
     driver = webdriver.Edge(executable_path=DRIVER_PATH)  # Change to the function related to your browser
-    driver.implicitly_wait(5)  # OPTIONAL CHANGE: if your internet connection is too slow, set an higher value
+    driver.implicitly_wait(10)  # OPTIONAL CHANGE: if your internet connection is too slow, set an higher value
     for i in range(len(get_functions)):
         print("Checking ({}/{})".format(i + 1, len(get_functions)))
         store = get_functions[i](ean, driver)
@@ -29,9 +35,15 @@ def main(get_functions):
         print("Not found in any store")
     else:
         print("Found {} result{}!".format(len(data), "s" if len(data) > 1 else ""))
-        show_results(data)
-        save_txt(ean, data)
-        save_csv(ean, data)
+        show_results(data) if is_interactive else show_results(data, 'y')
+        if is_interactive:
+            save_txt(ean, data)
+        elif "txt" in argv:
+            save_txt(ean, data, 'y')
+        if is_interactive:
+            save_csv(ean, data)
+        elif "csv" in argv:
+            save_csv(ean, data, 'y')
 
 
 # Validates EAN
@@ -44,16 +56,18 @@ def is_ean_valid(ean):
 
 
 # Show results in console, if asked
-def show_results(data):
-    show = input("Show results in console? [y/n] ")
+def show_results(data, show=None):
+    if show is None:
+        show = input("Show results in console? [y/n] ")
     if show.lower() == 'y':
         for store in data:
             print('\033[1m{}\033[0m\nName: {}\nPrice: {}\nStock: {}\nLink: {}\n'.format(*store))
 
 
 # Save results in a TXT file, if asked
-def save_txt(ean, data):
-    save = input("Save results in TXT file? [y/n] ")
+def save_txt(ean, data, save=None):
+    if save is None:
+        save = input("Save results in TXT file? [y/n] ")
     if save.lower() == 'y':
         date = datetime.today().strftime('%Y-%m-%d')
         filename = "output/{}_{}.txt".format(ean, date)
@@ -65,8 +79,9 @@ def save_txt(ean, data):
 
 
 # Save results in a CSV file, if asked
-def save_csv(ean, data):
-    save = input("Save results in CSV file? [y/n] ")
+def save_csv(ean, data, save=None):
+    if save is None:
+        save = input("Save results in CSV file? [y/n] ")
     if save.lower() == 'y':
         date = datetime.today().strftime('%Y-%m-%d')
         filename = "output/{}_{}.csv".format(ean, date)
@@ -251,4 +266,4 @@ get_functions.append(get_pcdiga)
 
 
 if __name__ == '__main__':
-    main(get_functions)
+    main(sys.argv, get_functions)

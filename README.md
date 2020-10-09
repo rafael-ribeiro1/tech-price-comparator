@@ -47,4 +47,5 @@ driver.implicitly_wait(5)  # OPTIONAL CHANGE: if your internet connection is too
 Após iniciar a execução do script é pedido o EAN. Após verificar os preços, é possível ver os preços na linha de comandos, guardá-los num ficheiro TXT ou CSV.
 > After starting the script execution, the user inputs the EAN. After checking the prices, the system asks the user if he wants to see the results in the console or save it in a TXT or CSV file.
 * #### Não interativo / Non interactive
-    * *soon*
+Neste modo não é pedido nenhum dado após iniciar a execução do script. O **EAN** deve surgir como o primeiro argumento após o nome do script. Os resultados surgem sempre na linha de comandos. Para guardar em um ficheiro TXT ou CSV basta escrever **txt** e/ou **csv** como argumento (após o *EAN*).
+> In this run mode there is no interaction after the script starts the execution. The first argument after the name of the script should be the **EAN**. The results are always shown in the console. In order to save a TXT or CSV file, **txt** and/or **csv** should be passed as argument (after *EAN*).
