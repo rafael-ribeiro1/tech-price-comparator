@@ -31,6 +31,7 @@ def main(argv, get_functions):
         if store is not None:
             data.append(store)
     driver.quit()
+    data.sort(key=getPrice)  # Sort all data by price
     if len(data) == 0:
         print("Not found in any store")
     else:
@@ -91,6 +92,11 @@ def save_csv(ean, data, save=None):
             for store in data:
                 file.write('{},{},{},{},{}\n'.format(*store))
         print("Saved CSV file. Check output folder.")
+
+
+# Get the price of the product, used to sort the data
+def getPrice(e):
+    return float(e[2].replace(",", ".")[:-1])
 
 
 # List of functions to get data from stores
